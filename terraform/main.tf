@@ -6,6 +6,13 @@ provider "aws" {
   region = var.aws_region
 }
 
+provider "aws" {
+  region = var.aws_region
+  access_key="ASIATE2QE3YDOEBVM4LJ"  
+  secret_key="wApDWeaLVjm7CoRXPmBDXFtBlkbyKD+2zfT6CYnl"
+  token="IQoJb3JpZ2luX2VjEGoaCXVzLXdlc3QtMiJHMEUCIHE3f/PafVXM9h4uvPSJOHXL/e137HWKakrRt3kcWpyUAiEAhi/w4qBMkCvzt/PUbU5fMwEQ87uGTvERfSxTKeZlP4YqrAIIQhAAGgwyMTY1MjcwNjg2NzgiDL8xQIqD/4vLcpd5qyqJAiXF5t5Wcd8jn2gjiODGu5fUsfFwKZVV0VbjDZbkzRnco589v09dEfnsAjLV6bPnjERvB98GrCJwx6BRqZLqQj7YVTq3q3ldlfP8Y+A4YTZjlr1LFrF+t2FUreqENGb4pe4D9LW8poKhs45AHjiu7M9k3gGG+mzy9WeEx5iltCIr2NNa7eb2dcfZFZGjAUD+NgLqzXiaHIs3QRSQARzSctO5CHWV5peBgkcHZGfl3GWEVdFhiTXEb+DKOg8cc+/FizLLqn67VjU4wV4la0FayPLfsSJOfGlz32OD81PvmIDAUudSvMHGnGVMOn+IlGeifp3BSLBkOkWEhonlGWTKiJ+W5f5cu0ueOd4wwcGFwgY6nQHafdI4ynYYhXw4RVimQi/vSM1oXnJQxQbWJuYjk8w7J1MqHmBfR0VkfqKb8S5wdyfKeTIBcaa+7Chcs+K2jypm4ii9r4WtOPsG1myAjX/icDbBiSGHt79pULUTHrf6AVMYa0gxL0Reu0+mFxhXPGmusmnffH6Ax2FfBwkhtr6CnmfrGxsS9cDmjnGCPARL4kREY2JEzMuxegUVnkql"
+}
+
 # Generate SSH key pair
 resource "tls_private_key" "demo_key" {
   algorithm = "RSA"
@@ -68,7 +75,7 @@ resource "aws_route_table" "demo_rt" {
 resource "aws_subnet" "demo_subnet" {
   vpc_id                  = aws_vpc.demo_vpc.id
   cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-west-2a"
+  availability_zone       = "us-east-1a"
   map_public_ip_on_launch = true
 
   tags = {
@@ -118,7 +125,7 @@ resource "aws_security_group" "demo_sg" {
 
 # EC2 Instance
 resource "aws_instance" "demo_instance" {
-  ami                    = "ami-03f65b8614a860c29" // Replace with a valid AMI ID for your region
+  ami                    = "ami-0779caf41f9ba54f0" // Replace with a valid AMI ID for your region
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.demo_subnet.id
   key_name               = aws_key_pair.demo_keypair.key_name
