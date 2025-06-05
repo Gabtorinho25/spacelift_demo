@@ -1,5 +1,5 @@
 provider "azurerm" {
-
+  features {}
 }
 
 resource "azurerm_virtual_network" "my_vnet" {
