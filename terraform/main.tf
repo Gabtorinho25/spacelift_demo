@@ -9,6 +9,12 @@ provider "aws" {
   token="IQoJb3JpZ2luX2VjEIP//////////wEaCXVzLXdlc3QtMiJHMEUCIEjBZn2c/+x2VqwzzqJjgy61cwT0U1ggUkz2gpbB8h1iAiEA52NxfkC4eCIh29vb+HcK9liCudkB1lcjEAolw5QkWZkqrAIIXBAAGgwyMTY1MjcwNjg2NzgiDGhoFKbFTF/Q9Et52SqJAvnyhooPzY5i1aA/K+WuRApXhUy9MKfKRS70gZo4nYGu1kRlpzs1o7sIZDMs7A4mI2ZiJ1koD20woK1mm5f9fSeEMy3kPJqtz+8fISRiXoJay/Qnn8unBJZO86I10kBmC4jpOm9+1rDGoLBw7JHFquiZZlD7AmbQfInLOYjA0VLOlI05V4EPzkuNK0as0L6C72PR4iEM+QD5NiPTQ2Prq/pqKWJ6ksNhGdrxB9Sn3i15qAn/pc/9MZZQ0BoZzsFTQapjhdvYkr1peP51X8Os2IjCqplu39DkWpQ6xvij5L2k8efGJjsDS4T6gNoqZlTJs5mdeTqvgSeg5qdvrTxRssAE0ZXsxMAIGYkwu4OLwgY6nQHG+XvYmDEcQ0iRC82Q2Y89SHjVBR774oxr5rWxOSAecIoYwgIlVWQKCKhLEDt5ECduIsOcBjcwarR1A+ISdx4S6UlRFps4F0mDxgoa0FYy0Bl3kra3NuGsT1MLHysv0qs8ZrrARovBTa92MOvkLDDVwZEd1ZO3pl77cTI3Rzl2jRAWFZL51/LQedsQmSdfzODNcHfzHSVeZjX+Ygxm"
 }
 
+# Create SSH Key Pair from provided public key
+resource "aws_key_pair" "generated_key" {
+  key_name   = var.key_name
+  public_key = var.ssh_public_key
+}
+
 # VPC
 resource "aws_vpc" "main" {
   cidr_block = var.vpc_cidr
@@ -83,7 +89,7 @@ resource "aws_security_group" "web_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.allowed_ssh_cidr]
+    cidr_blocks = [var.my_public_ip]
   }
 
   ingress {
@@ -154,7 +160,7 @@ resource "aws_instance" "web" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.web.id
-  key_name                    = var.key_name
+  key_name                    = aws_key_pair.generated_key.key_name
   vpc_security_group_ids      = [aws_security_group.web_sg.id]
   associate_public_ip_address = true
 
@@ -167,7 +173,7 @@ resource "aws_instance" "app" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.app.id
-  key_name               = var.key_name
+  key_name               = aws_key_pair.generated_key.key_name
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   tags = {
@@ -179,10 +185,23 @@ resource "aws_instance" "db" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.db.id
-  key_name               = var.key_name
+  key_name               = aws_key_pair.generated_key.key_name
   vpc_security_group_ids = [aws_security_group.db_sg.id]
 
   tags = {
     Name = "db-instance"
   }
+}
+
+# Output IPs
+output "web_public_ip" {
+  value = aws_instance.web.public_ip
+}
+
+output "app_private_ip" {
+  value = aws_instance.app.private_ip
+}
+
+output "db_private_ip" {
+  value = aws_instance.db.private_ip
 }
