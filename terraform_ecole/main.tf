@@ -23,6 +23,7 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
+# Virtual Network
 resource "azurerm_virtual_network" "vnet" {
   name                = "bastion-vnet"
   address_space       = ["10.0.0.0/16"]
@@ -30,6 +31,7 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
+# Subnet
 resource "azurerm_subnet" "subnet" {
   name                 = "bastion-subnet"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -37,6 +39,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+# Public IP
 resource "azurerm_public_ip" "bastion_ip" {
   name                = "bastion-public-ip"
   location            = var.location
@@ -45,6 +48,7 @@ resource "azurerm_public_ip" "bastion_ip" {
   sku                 = "Standard"
 }
 
+# Network Security Group
 resource "azurerm_network_security_group" "bastion_nsg" {
   name                = "bastion-nsg"
   location            = var.location
@@ -63,6 +67,7 @@ resource "azurerm_network_security_group" "bastion_nsg" {
   }
 }
 
+# Network Interface
 resource "azurerm_network_interface" "bastion_nic" {
   name                = "bastion-nic"
   location            = var.location
@@ -74,10 +79,15 @@ resource "azurerm_network_interface" "bastion_nic" {
     private_ip_address_allocation = "Dynamic"
     public_ip_address_id          = azurerm_public_ip.bastion_ip.id
   }
+}
 
+# Associate NSG with Subnet
+resource "azurerm_subnet_network_security_group_association" "bastion_subnet_nsg_assoc" {
+  subnet_id                 = azurerm_subnet.subnet.id
   network_security_group_id = azurerm_network_security_group.bastion_nsg.id
 }
 
+# Linux VM
 resource "azurerm_linux_virtual_machine" "bastion_vm" {
   name                = "bastion-vm"
   resource_group_name = azurerm_resource_group.rg.name
@@ -106,3 +116,4 @@ resource "azurerm_linux_virtual_machine" "bastion_vm" {
     version   = "latest"
   }
 }
+
