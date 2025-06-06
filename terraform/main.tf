@@ -4,103 +4,89 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
-  access_key="ASIATE2QE3YDOEBVM4LJ"  
-  secret_key="wApDWeaLVjm7CoRXPmBDXFtBlkbyKD+2zfT6CYnl"
-  token="IQoJb3JpZ2luX2VjEGoaCXVzLXdlc3QtMiJHMEUCIHE3f/PafVXM9h4uvPSJOHXL/e137HWKakrRt3kcWpyUAiEAhi/w4qBMkCvzt/PUbU5fMwEQ87uGTvERfSxTKeZlP4YqrAIIQhAAGgwyMTY1MjcwNjg2NzgiDL8xQIqD/4vLcpd5qyqJAiXF5t5Wcd8jn2gjiODGu5fUsfFwKZVV0VbjDZbkzRnco589v09dEfnsAjLV6bPnjERvB98GrCJwx6BRqZLqQj7YVTq3q3ldlfP8Y+A4YTZjlr1LFrF+t2FUreqENGb4pe4D9LW8poKhs45AHjiu7M9k3gGG+mzy9WeEx5iltCIr2NNa7eb2dcfZFZGjAUD+NgLqzXiaHIs3QRSQARzSctO5CHWV5peBgkcHZGfl3GWEVdFhiTXEb+DKOg8cc+/FizLLqn67VjU4wV4la0FayPLfsSJOfGlz32OD81PvmIDAUudSvMHGnGVMOn+IlGeifp3BSLBkOkWEhonlGWTKiJ+W5f5cu0ueOd4wwcGFwgY6nQHafdI4ynYYhXw4RVimQi/vSM1oXnJQxQbWJuYjk8w7J1MqHmBfR0VkfqKb8S5wdyfKeTIBcaa+7Chcs+K2jypm4ii9r4WtOPsG1myAjX/icDbBiSGHt79pULUTHrf6AVMYa0gxL0Reu0+mFxhXPGmusmnffH6Ax2FfBwkhtr6CnmfrGxsS9cDmjnGCPARL4kREY2JEzMuxegUVnkql"
+  access_key="ASIATE2QE3YDPTWUY55F"  
+  secret_key="mjf3hit+2tllp98i09jZfk5gKpYQZeDMErEZPlz1"
+  token="IQoJb3JpZ2luX2VjEIP//////////wEaCXVzLXdlc3QtMiJHMEUCIEjBZn2c/+x2VqwzzqJjgy61cwT0U1ggUkz2gpbB8h1iAiEA52NxfkC4eCIh29vb+HcK9liCudkB1lcjEAolw5QkWZkqrAIIXBAAGgwyMTY1MjcwNjg2NzgiDGhoFKbFTF/Q9Et52SqJAvnyhooPzY5i1aA/K+WuRApXhUy9MKfKRS70gZo4nYGu1kRlpzs1o7sIZDMs7A4mI2ZiJ1koD20woK1mm5f9fSeEMy3kPJqtz+8fISRiXoJay/Qnn8unBJZO86I10kBmC4jpOm9+1rDGoLBw7JHFquiZZlD7AmbQfInLOYjA0VLOlI05V4EPzkuNK0as0L6C72PR4iEM+QD5NiPTQ2Prq/pqKWJ6ksNhGdrxB9Sn3i15qAn/pc/9MZZQ0BoZzsFTQapjhdvYkr1peP51X8Os2IjCqplu39DkWpQ6xvij5L2k8efGJjsDS4T6gNoqZlTJs5mdeTqvgSeg5qdvrTxRssAE0ZXsxMAIGYkwu4OLwgY6nQHG+XvYmDEcQ0iRC82Q2Y89SHjVBR774oxr5rWxOSAecIoYwgIlVWQKCKhLEDt5ECduIsOcBjcwarR1A+ISdx4S6UlRFps4F0mDxgoa0FYy0Bl3kra3NuGsT1MLHysv0qs8ZrrARovBTa92MOvkLDDVwZEd1ZO3pl77cTI3Rzl2jRAWFZL51/LQedsQmSdfzODNcHfzHSVeZjX+Ygxm"
 }
 
-# Generate SSH key pair
-resource "tls_private_key" "demo_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-# Store private key in SSM Parameter Store
-resource "aws_ssm_parameter" "private_key" {
-  name        = "/ssh/demo-keypair/private"
-  description = "Private SSH key for EC2 demo"
-  type        = "SecureString"
-  value       = tls_private_key.demo_key.private_key_pem
+# VPC
+resource "aws_vpc" "main" {
+  cidr_block = var.vpc_cidr
 
   tags = {
-    environment = "demo"
+    Name = "main-vpc"
   }
 }
 
-# Create AWS key pair using the public key
-resource "aws_key_pair" "demo_keypair" {
-  key_name   = "demo-keypair"
-  public_key = tls_private_key.demo_key.public_key_openssh
-}
-
-# Create VPC
-resource "aws_vpc" "demo_vpc" {
-  cidr_block           = "10.0.0.0/16"
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+# Subnets
+resource "aws_subnet" "web" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = var.public_subnet_cidr
+  map_public_ip_on_launch = true
 
   tags = {
-    Name = "demo-vpc"
+    Name = "web-subnet"
+  }
+}
+
+resource "aws_subnet" "app" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.app_subnet_cidr
+
+  tags = {
+    Name = "app-subnet"
+  }
+}
+
+resource "aws_subnet" "db" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = var.db_subnet_cidr
+
+  tags = {
+    Name = "db-subnet"
   }
 }
 
 # Internet Gateway
-resource "aws_internet_gateway" "demo_igw" {
-  vpc_id = aws_vpc.demo_vpc.id
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "demo-igw"
+    Name = "main-igw"
   }
 }
 
-# Route Table
-resource "aws_route_table" "demo_rt" {
-  vpc_id = aws_vpc.demo_vpc.id
+# Route Table and Association
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.demo_igw.id
+    gateway_id = aws_internet_gateway.igw.id
   }
 
   tags = {
-    Name = "demo-rt"
+    Name = "public-rt"
   }
 }
 
-# Subnet
-resource "aws_subnet" "demo_subnet" {
-  vpc_id                  = aws_vpc.demo_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "us-east-1a"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "demo-subnet"
-  }
+resource "aws_route_table_association" "web" {
+  subnet_id      = aws_subnet.web.id
+  route_table_id = aws_route_table.public.id
 }
 
-# Route Table Association
-resource "aws_route_table_association" "demo_rta" {
-  subnet_id      = aws_subnet.demo_subnet.id
-  route_table_id = aws_route_table.demo_rt.id
-}
-
-# Security Group
-resource "aws_security_group" "demo_sg" {
-  name        = "demo-sg"
-  description = "Allow SSH and HTTP inbound traffic"
-  vpc_id      = aws_vpc.demo_vpc.id
+# Security Groups
+resource "aws_security_group" "web_sg" {
+  vpc_id = aws_vpc.main.id
 
   ingress {
-    description = "SSH from anywhere"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
 
   ingress {
-    description = "HTTP from anywhere"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -115,31 +101,88 @@ resource "aws_security_group" "demo_sg" {
   }
 
   tags = {
-    Name = "demo-sg"
+    Name = "web-sg"
   }
 }
 
-# EC2 Instance
-resource "aws_instance" "demo_instance" {
-  ami                    = "ami-0779caf41f9ba54f0" // Replace with a valid AMI ID for your region
-  instance_type          = "t2.micro"
-  subnet_id              = aws_subnet.demo_subnet.id
-  key_name               = aws_key_pair.demo_keypair.key_name
-  vpc_security_group_ids = [aws_security_group.demo_sg.id]
+resource "aws_security_group" "app_sg" {
+  vpc_id = aws_vpc.main.id
 
-  user_data = <<-EOF
-    #!/bin/bash
-    apt-get update
-    apt-get install -y python3 python3-pip python3-venv
-  EOF
+  ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.web_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
-    Name = "demo-instance"
+    Name = "app-sg"
   }
 }
 
-# Outputs
-output "instance_public_ip" {
-  description = "Public IP of the EC2 instance"
-  value       = aws_instance.demo_instance.public_ip
+resource "aws_security_group" "db_sg" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port       = 3306
+    to_port         = 3306
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "db-sg"
+  }
+}
+
+# EC2 Instances
+resource "aws_instance" "web" {
+  ami                         = var.ami_id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.web.id
+  key_name                    = var.key_name
+  vpc_security_group_ids      = [aws_security_group.web_sg.id]
+  associate_public_ip_address = true
+
+  tags = {
+    Name = "web-instance"
+  }
+}
+
+resource "aws_instance" "app" {
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.app.id
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.app_sg.id]
+
+  tags = {
+    Name = "app-instance"
+  }
+}
+
+resource "aws_instance" "db" {
+  ami                    = var.ami_id
+  instance_type          = var.instance_type
+  subnet_id              = aws_subnet.db.id
+  key_name               = var.key_name
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+
+  tags = {
+    Name = "db-instance"
+  }
 }
